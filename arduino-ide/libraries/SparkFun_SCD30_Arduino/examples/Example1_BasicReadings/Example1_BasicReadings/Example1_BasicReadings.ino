@@ -1,0 +1,43 @@
+
+#include <ros.h>
+#include <ros/time.h>
+#include <co2/sensirion.h>
+#include <Wire.h>
+#include "SparkFun_SCD30_Arduino_Library.h" 
+
+SCD30 airSensor;
+ros::NodeHandle  nh;
+
+co2::sensirion val_msg;
+ros::Publisher pub_co2( "co2_humidity_temp", &val_msg);
+char frameid[] = "co2_humidity_temp";
+
+void setup()
+{
+  Wire.begin();
+
+//  Serial.begin(9600);
+//  Serial.println("SCD30 Example");
+
+  airSensor.begin(); //This will cause readings to occur every two seconds
+  // initialize serial communication:
+  nh.initNode();
+  nh.advertise(pub_co2);
+
+  val_msg.carbon_dioxide = 0;
+  val_msg.header.frame_id =  frameid;
+  val_msg.temperature = 0;
+  val_msg.humidity = 0;
+}
+
+void loop()
+{
+
+val_msg.carbon_dioxide=airSensor.getCO2();
+  val_msg.temperature=airSensor.getTemperature();
+  val_msg.humidity=airSensor.getHumidity();
+  val_msg.header.stamp = nh.now();
+  pub_co2.publish(&val_msg);
+  nh.spinOnce();
+  delay(500);
+}
